@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { 
   LayoutDashboard, 
   Library, 
@@ -9,7 +10,6 @@ import {
   CheckSquare, 
   Bot, 
   Settings, 
-  UserCircle 
 } from "lucide-react";
 
 const navItems = [
@@ -21,15 +21,15 @@ const navItems = [
 ];
 
 const bottomNavItems = [
-  { name: "Profile", href: "/profile", icon: UserCircle },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  // useUser() gives us real-time access to the currently logged-in user
+  const { user } = useUser();
 
   const renderLink = (item: typeof navItems[0]) => {
-    // Check if the current route matches the link
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
     const Icon = item.icon;
     
@@ -63,9 +63,21 @@ export function Sidebar() {
         {navItems.map(renderLink)}
       </div>
 
-      <div className="p-4 border-t border-slate-200 dark:border-white/10">
-        <div className="flex flex-col gap-2">
-          {bottomNavItems.map(renderLink)}
+      <div className="p-4 border-t border-slate-200 dark:border-white/10 space-y-2">
+        {bottomNavItems.map(renderLink)}
+        
+        {/* Real user info from Clerk */}
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl mt-2">
+          {/* UserButton is Clerk's built-in avatar + sign-out dropdown */}
+          <UserButton afterSignOutUrl="/" />
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+              {user?.firstName ?? "Loading..."}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {user?.primaryEmailAddress?.emailAddress}
+            </span>
+          </div>
         </div>
       </div>
     </aside>

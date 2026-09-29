@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { SignUp } from "@clerk/nextjs";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function SignupPage() {
   return (
@@ -20,81 +21,21 @@ export default function SignupPage() {
             S
           </div>
         </div>
-        <h2 className="text-center text-3xl font-extrabold tracking-tight">
-          Create an account
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
-          Start your personalized learning journey today
-        </p>
-      </div>
-
-      <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="glass-panel py-8 px-4 sm:px-10 rounded-2xl shadow-xl">
-          <form className="space-y-5" action="#" method="POST">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-300">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-white/10 rounded-xl bg-black/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-white/10 rounded-xl bg-black/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-white/10 rounded-xl bg-black/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Link href="/dashboard" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 transition-colors shadow-[0_0_20px_-5px_rgba(99,102,241,0.5)]">
-                Create Account
-              </Link>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-400">
-              Already have an account?{" "}
-              <Link href="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                Log in
-              </Link>
-            </p>
-          </div>
+        {/* Clerk's pre-built, fully secure SignUp UI component */}
+        <div className="flex justify-center">
+          <SignUp
+            appearance={{
+              variables: {
+                colorPrimary: "#4f46e5",
+                colorBackground: "#0f172a",
+                colorText: "#f8fafc",
+                colorInputBackground: "#1e293b",
+                colorInputText: "#f8fafc",
+                borderRadius: "0.75rem",
+              },
+            }}
+            fallbackRedirectUrl="/dashboard"
+          />
         </div>
       </div>
     </div>

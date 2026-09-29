@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import ConvexClientProvider from "@/components/ConvexClientProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,20 +14,20 @@ export const metadata: Metadata = {
   description: "Your personalized intelligent learning platform.",
 };
 
-import ConvexClientProvider from "@/components/ConvexClientProvider";
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
-        <ConvexClientProvider>
-          {children}
-        </ConvexClientProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${inter.variable} antialiased`}>
+          <ConvexClientProvider>
+            {children}
+          </ConvexClientProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

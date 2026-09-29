@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { SignIn } from "@clerk/nextjs";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -20,86 +21,21 @@ export default function LoginPage() {
             S
           </div>
         </div>
-        <h2 className="text-center text-3xl font-extrabold tracking-tight">
-          Welcome back
-        </h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
-          Sign in to access your StudyMate dashboard
-        </p>
-      </div>
-
-      <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="glass-panel py-8 px-4 sm:px-10 rounded-2xl shadow-xl">
-          <form className="space-y-6" action="#" method="POST">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-white/10 rounded-xl bg-black/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-white/10 rounded-xl bg-black/20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-indigo-500 focus:ring-indigo-500 border-white/10 rounded bg-black/20 cursor-pointer"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-400 cursor-pointer">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <Link href="/dashboard" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 transition-colors shadow-[0_0_20px_-5px_rgba(99,102,241,0.5)]">
-                Sign in
-              </Link>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-400">
-              Don't have an account?{" "}
-              <Link href="/signup" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
-                Sign up for free
-              </Link>
-            </p>
-          </div>
+        {/* Clerk's pre-built, fully secure SignIn UI component */}
+        <div className="flex justify-center">
+          <SignIn
+            appearance={{
+              variables: {
+                colorPrimary: "#4f46e5",
+                colorBackground: "#0f172a",
+                colorText: "#f8fafc",
+                colorInputBackground: "#1e293b",
+                colorInputText: "#f8fafc",
+                borderRadius: "0.75rem",
+              },
+            }}
+            fallbackRedirectUrl="/dashboard"
+          />
         </div>
       </div>
     </div>

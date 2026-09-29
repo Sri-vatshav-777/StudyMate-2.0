@@ -3,15 +3,26 @@ import { v } from "convex/values";
 
 export default defineSchema({
   tasks: defineTable({
+    // Every task now belongs to a specific user
+    userId: v.string(),
     title: v.string(),
     subject: v.string(),
     dueDate: v.string(),
-    priority: v.string(), // e.g., "high", "medium", "low"
-    status: v.string(), // e.g., "pending", "completed"
-  }),
-  
+    priority: v.string(), // "high" | "medium" | "low"
+    status: v.string(),   // "pending" | "completed"
+  }).index("by_user", ["userId"]), // Index allows fast lookup by userId
+
   subjects: defineTable({
+    userId: v.string(),
     name: v.string(),
     color: v.string(),
-  }),
+  }).index("by_user", ["userId"]),
+
+  notes: defineTable({
+    userId: v.string(),
+    title: v.string(),
+    content: v.string(),
+    subjectId: v.optional(v.id("subjects")),
+    subjectName: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
 });
