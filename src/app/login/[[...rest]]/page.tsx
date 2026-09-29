@@ -25,8 +25,8 @@ export default function LoginPage() {
             appearance={{
               variables: {
                 colorPrimary: "#4f46e5",
-                colorBackground: "#0f172a",
-                colorText: "#f8fafc",
+                colorBackground: "#ebedf1ff",
+                colorText: "#f7fafcff",
                 colorInputBackground: "#1e293b",
                 colorInputText: "#f8fafc",
                 borderRadius: "0.75rem",
