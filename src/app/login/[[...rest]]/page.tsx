@@ -5,7 +5,6 @@ import Link from "next/link";
 export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden text-white">
-      {/* Background gradients */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/20 blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/20 blur-[120px]" />
@@ -21,7 +20,6 @@ export default function LoginPage() {
             S
           </div>
         </div>
-        {/* Clerk's pre-built, fully secure SignIn UI component */}
         <div className="flex justify-center">
           <SignIn
             appearance={{
