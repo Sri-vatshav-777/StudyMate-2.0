@@ -1,12 +1,13 @@
+"use client";
+
 import { Plus, Check, Clock, Calendar } from "lucide-react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 
 export default function TasksPage() {
-  const tasks = [
-    { title: "Review Operating Systems Chapter 3", subject: "Operating Systems", due: "Today, 5:00 PM", priority: "high", status: "pending" },
-    { title: "Complete Database Normalization Quiz", subject: "Database Systems", due: "Tomorrow, 10:00 AM", priority: "medium", status: "pending" },
-    { title: "Read Machine Learning Notes", subject: "Machine Learning", due: "Friday, 2:00 PM", priority: "low", status: "pending" },
-    { title: "Write B-Tree Implementation", subject: "Data Structures", due: "Yesterday", priority: "high", status: "completed" },
-  ];
+  // 1. We ask the Convex backend for our tasks in real-time!
+  const tasks = useQuery(api.tasks.getTasks);
+  const toggleStatus = useMutation(api.tasks.toggleTaskStatus);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -38,9 +39,23 @@ export default function TasksPage() {
         </div>
         
         <div className="divide-y divide-slate-100 dark:divide-white/5">
-          {tasks.map((task, index) => (
-            <div key={index} className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 p-4 items-center transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${task.status === 'completed' ? 'opacity-50' : ''}`}>
-              <button className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${task.status === 'completed' ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-500'}`}>
+          {/* 2. Loading state while we fetch from the database */}
+          {tasks === undefined && (
+            <div className="p-8 text-center text-slate-500">Loading tasks from database...</div>
+          )}
+          
+          {/* 3. Empty state if no tasks exist */}
+          {tasks !== undefined && tasks.length === 0 && (
+            <div className="p-8 text-center text-slate-500">No tasks found. Try adding one from the Convex dashboard!</div>
+          )}
+
+          {/* 4. Display real data */}
+          {tasks?.map((task) => (
+            <div key={task._id} className={`grid grid-cols-[auto_1fr_auto_auto] gap-4 p-4 items-center transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${task.status === 'completed' ? 'opacity-50' : ''}`}>
+              <button 
+                onClick={() => toggleStatus({ id: task._id, status: task.status === 'completed' ? 'pending' : 'completed' })}
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${task.status === 'completed' ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-indigo-500'}`}
+              >
                 {task.status === 'completed' && <Check className="w-4 h-4" />}
               </button>
               
@@ -50,12 +65,12 @@ export default function TasksPage() {
               </div>
               
               <div className="hidden md:flex items-center gap-1.5 text-sm text-slate-500">
-                {task.due.includes("Today") || task.due.includes("Tomorrow") ? (
+                {task.dueDate.includes("Today") || task.dueDate.includes("Tomorrow") ? (
                   <Clock className="w-4 h-4" />
                 ) : (
                   <Calendar className="w-4 h-4" />
                 )}
-                {task.due}
+                {task.dueDate}
               </div>
               
               <div className="text-right">

@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "Your personalized intelligent learning platform.",
 };
 
+import ConvexClientProvider from "@/components/ConvexClientProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        {children}
+        <ConvexClientProvider>
+          {children}
+        </ConvexClientProvider>
       </body>
     </html>
   );
