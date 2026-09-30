@@ -69,23 +69,40 @@ Here is an architectural breakdown of what you asked:
 
     // Initialize Google Gemini API
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: SYSTEM_PROMPT + modeInstruction,
-    });
+    const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.7-flash", "gemini-3.6-flash"];
 
-    // Build conversation context if history exists
-    const chat = model.startChat({
-      history: Array.isArray(history)
-        ? history.slice(-8).map((h: { role: string; content: string }) => ({
-            role: h.role === "assistant" ? "model" : "user",
-            parts: [{ text: h.content }],
-          }))
-        : [],
-    });
+    let responseText = "";
+    let lastError: any = null;
 
-    const result = await chat.sendMessage(message + modeInstruction);
-    const responseText = result.response.text();
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: SYSTEM_PROMPT + modeInstruction,
+        });
+
+        // Build conversation context if history exists
+        const chat = model.startChat({
+          history: Array.isArray(history)
+            ? history.slice(-8).map((h: { role: string; content: string }) => ({
+                role: h.role === "assistant" ? "model" : "user",
+                parts: [{ text: h.content }],
+              }))
+            : [],
+        });
+
+        const result = await chat.sendMessage(message + modeInstruction);
+        responseText = result.response.text();
+        if (responseText) break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`Model ${modelName} unavailable, attempting fallback...`);
+      }
+    }
+
+    if (!responseText) {
+      throw lastError || new Error("Failed to receive response from Gemini models.");
+    }
 
     return NextResponse.json({ response: responseText });
   } catch (error: any) {
