@@ -69,7 +69,7 @@ export function Sidebar() {
         {/* Real user info from Clerk */}
         <div className="flex items-center gap-3 px-4 py-3 rounded-xl mt-2">
           {/* UserButton is Clerk's built-in avatar + sign-out dropdown */}
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
               {user?.firstName ?? "Loading..."}

@@ -25,4 +25,19 @@ export default defineSchema({
     subjectId: v.optional(v.id("subjects")),
     subjectName: v.optional(v.string()),
   }).index("by_user", ["userId"]),
+
+  conversations: defineTable({
+    userId: v.string(),
+    title: v.string(),
+    subjectName: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    userId: v.string(),
+    role: v.string(), // "user" | "assistant"
+    content: v.string(),
+    createdAt: v.number(),
+  }).index("by_conversation", ["conversationId"]),
 });

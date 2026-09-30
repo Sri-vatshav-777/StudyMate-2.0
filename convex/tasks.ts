@@ -14,11 +14,12 @@ async function requireUser(ctx: { auth: { getUserIdentity: () => Promise<{ subje
 export const getTasks = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireUser(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
     // The .withIndex("by_user") makes this query fast and secure
     return await ctx.db
       .query("tasks")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .collect();
   },

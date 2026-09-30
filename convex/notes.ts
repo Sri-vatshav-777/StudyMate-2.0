@@ -10,10 +10,11 @@ async function requireUser(ctx: { auth: { getUserIdentity: () => Promise<{ subje
 export const getNotes = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await requireUser(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
     return await ctx.db
       .query("notes")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .order("desc")
       .collect();
   },
