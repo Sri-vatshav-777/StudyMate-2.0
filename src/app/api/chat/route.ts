@@ -67,9 +67,35 @@ Here is an architectural breakdown of what you asked:
       return NextResponse.json({ response: fallbackResponse });
     }
 
-    // Initialize Google Gemini API
+    // Clean and validate chat history for Gemini (must start with 'user', alternate strictly, and end with 'model')
+    const formattedHistory: { role: "user" | "model"; parts: [{ text: string }] }[] = [];
+    if (Array.isArray(history)) {
+      for (const item of history) {
+        if (!item || !item.content || typeof item.content !== "string") continue;
+        const role: "user" | "model" = item.role === "assistant" || item.role === "model" ? "model" : "user";
+        if (formattedHistory.length === 0) {
+          if (role !== "user") continue; // First message must be 'user'
+          formattedHistory.push({ role: "user", parts: [{ text: item.content }] });
+        } else {
+          const prev = formattedHistory[formattedHistory.length - 1];
+          if (prev.role === role) {
+            prev.parts[0].text += "\n\n" + item.content;
+          } else {
+            formattedHistory.push({ role, parts: [{ text: item.content }] });
+          }
+        }
+      }
+      // If the last message in history is 'user', pop it since chat.sendMessage() supplies the new user message
+      while (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === "user") {
+        formattedHistory.pop();
+      }
+    }
+
+    const geminiHistory = formattedHistory.slice(-10);
+
+    // Initialize Google Gemini API with robust model fallback
     const genAI = new GoogleGenerativeAI(apiKey);
-    const candidateModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.7-flash", "gemini-3.6-flash"];
+    const candidateModels = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.7-flash"];
 
     let responseText = "";
     let lastError: any = null;
@@ -81,22 +107,16 @@ Here is an architectural breakdown of what you asked:
           systemInstruction: SYSTEM_PROMPT + modeInstruction,
         });
 
-        // Build conversation context if history exists
         const chat = model.startChat({
-          history: Array.isArray(history)
-            ? history.slice(-8).map((h: { role: string; content: string }) => ({
-                role: h.role === "assistant" ? "model" : "user",
-                parts: [{ text: h.content }],
-              }))
-            : [],
+          history: geminiHistory,
         });
 
         const result = await chat.sendMessage(message + modeInstruction);
         responseText = result.response.text();
         if (responseText) break;
-      } catch (err) {
+      } catch (err: any) {
         lastError = err;
-        console.warn(`Model ${modelName} unavailable, attempting fallback...`);
+        console.warn(`Model ${modelName} returned error:`, err?.message || err);
       }
     }
 
