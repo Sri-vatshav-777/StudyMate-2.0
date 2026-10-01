@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Modal } from "@/components/Modal";
-import { Plus, FileText, Tag, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, FileText, Tag, Trash2, Loader2, Search, Share2, Globe } from "lucide-react";
 import { Id } from "../../../../convex/_generated/dataModel";
 
 export default function NotesPage() {
@@ -12,6 +12,7 @@ export default function NotesPage() {
   const subjects = useQuery(api.subjects.getSubjects);
   const createNote = useMutation(api.notes.createNote);
   const deleteNote = useMutation(api.notes.deleteNote);
+  const toggleShareNote = useMutation(api.community.toggleShareNote);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -118,17 +119,39 @@ export default function NotesPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start gap-2">
-                  <h3 className="text-lg font-bold truncate">{note.title}</h3>
-                  <button
-                    onClick={() => handleDelete(note._id)}
-                    disabled={deletingId === note._id}
-                    className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                  >
-                    {deletingId === note._id
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <Trash2 className="w-4 h-4" />
-                    }
-                  </button>
+                  <div className="flex items-center gap-2 truncate">
+                    <h3 className="text-lg font-bold truncate">{note.title}</h3>
+                    {note.isPublic && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full shrink-0">
+                        <Globe className="w-3 h-3" />
+                        Public
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => toggleShareNote({ noteId: note._id, isPublic: !note.isPublic })}
+                      className={`p-1 rounded-md transition ${
+                        note.isPublic
+                          ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      }`}
+                      title={note.isPublic ? "Unshare from Community" : "Share with Community Hub"}
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(note._id)}
+                      disabled={deletingId === note._id}
+                      className="text-slate-300 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
+                    >
+                      {deletingId === note._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {note.content && (
                   <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 line-clamp-2">{note.content}</p>

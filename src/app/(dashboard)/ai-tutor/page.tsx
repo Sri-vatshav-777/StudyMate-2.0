@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
+import Link from "next/link";
 import { 
   Bot, 
   Send, 
@@ -16,7 +18,9 @@ import {
   FileText, 
   Loader2, 
   MessageSquare,
-  ChevronRight
+  ChevronRight,
+  Database,
+  ExternalLink
 } from "lucide-react";
 
 const MODES = [
@@ -34,9 +38,15 @@ const STARTER_PROMPTS = [
   "Quiz me on Binary Search Trees with 3 practice questions",
 ];
 
-export default function AiTutorPage() {
+function AiTutorContent() {
+  const searchParams = useSearchParams();
+  const initialDocId = searchParams.get("docId") || "";
+
   const conversations = useQuery(api.ai.getConversations);
+  const documents = useQuery(api.documents.getDocuments);
+  
   const [selectedConvId, setSelectedConvId] = useState<Id<"conversations"> | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<string>(initialDocId);
   const messages = useQuery(api.ai.getMessages, { conversationId: selectedConvId ?? undefined });
 
   const createConversation = useMutation(api.ai.createConversation);
@@ -47,8 +57,16 @@ export default function AiTutorPage() {
   const [selectedMode, setSelectedMode] = useState("normal");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recentSources, setRecentSources] = useState<any[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Sync initialDocId from URL if changed
+  useEffect(() => {
+    if (initialDocId) {
+      setSelectedDocId(initialDocId);
+    }
+  }, [initialDocId]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -66,6 +84,7 @@ export default function AiTutorPage() {
     setSelectedConvId(null);
     setInput("");
     setError(null);
+    setRecentSources([]);
   };
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -101,7 +120,7 @@ export default function AiTutorPage() {
         content: m.content,
       }));
 
-      // 3. Call server-side AI route
+      // 3. Call server-side AI route with document grounding support
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,6 +128,7 @@ export default function AiTutorPage() {
           message: messageContent,
           mode: selectedMode,
           history: historyContext,
+          documentId: selectedDocId || undefined,
         }),
       });
 
@@ -116,6 +136,12 @@ export default function AiTutorPage() {
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to get AI response.");
+      }
+
+      if (data.sources && data.sources.length > 0) {
+        setRecentSources(data.sources);
+      } else {
+        setRecentSources([]);
       }
 
       // 4. Save AI response to database
@@ -143,6 +169,8 @@ export default function AiTutorPage() {
       console.error("Failed to delete chat:", err);
     }
   };
+
+  const activeDoc = documents?.find((d) => d._id === selectedDocId);
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col md:flex-row gap-6 animate-in fade-in duration-500">
@@ -208,38 +236,68 @@ export default function AiTutorPage() {
             <div>
               <h2 className="font-bold text-sm tracking-tight flex items-center gap-2">
                 StudyMate AI Tutor
-                <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Active
-                </span>
+                {selectedDocId ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-normal text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                    <Database className="w-3 h-3" />
+                    RAG Grounded
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Active
+                  </span>
+                )}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Ask any academic question or explore challenging topics
+                {activeDoc 
+                  ? `Answering using verified excerpts from: ${activeDoc.fileName}`
+                  : "Ask any academic question or ground with your course materials below"}
               </p>
             </div>
           </div>
 
-          {/* Mode Selector */}
-          <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-white/10 p-1 rounded-xl">
-            {MODES.map((m) => {
-              const Icon = m.icon;
-              const isSelected = selectedMode === m.id;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => setSelectedMode(m.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    isSelected
-                      ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                  title={m.label}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{m.label}</span>
-                </button>
-              );
-            })}
+          {/* Document Grounding Selector */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-2.5 py-1 rounded-xl text-xs">
+              <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+              <select
+                value={selectedDocId}
+                onChange={(e) => setSelectedDocId(e.target.value)}
+                className="bg-transparent text-xs text-slate-700 dark:text-slate-300 focus:outline-none max-w-[150px] truncate"
+              >
+                <option value="">No Document (General AI)</option>
+                {documents
+                  ?.filter((d) => d.status === "ready")
+                  .map((d) => (
+                    <option key={d._id} value={d._id}>
+                      📄 {d.fileName}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Mode Selector */}
+            <div className="flex items-center gap-1 bg-slate-200/60 dark:bg-white/10 p-1 rounded-xl">
+              {MODES.map((m) => {
+                const Icon = m.icon;
+                const isSelected = selectedMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMode(m.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                      isSelected
+                        ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                    title={m.label}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -251,9 +309,29 @@ export default function AiTutorPage() {
                 <Bot className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold mb-2">What would you like to master today?</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-                Choose a suggested topic below or type your own question to start an interactive study session.
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                {activeDoc ? (
+                  <span>
+                    Currently grounded with <span className="font-semibold text-indigo-600 dark:text-indigo-400">&ldquo;{activeDoc.fileName}&rdquo;</span>. Ask questions directly from this document!
+                  </span>
+                ) : (
+                  <span>
+                    Choose a starter prompt below, or attach an uploaded syllabus PDF to ask questions grounded in your course materials.
+                  </span>
+                )}
               </p>
+
+              {/* Quick links to Documents if none uploaded */}
+              {(!documents || documents.length === 0) && (
+                <Link
+                  href="/documents"
+                  className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800/40 hover:underline"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Upload a PDF in Documents to enable RAG tutoring
+                  <ExternalLink className="w-3 h-3 ml-0.5" />
+                </Link>
+              )}
 
               <div className="grid grid-cols-1 gap-2.5 w-full text-left">
                 {STARTER_PROMPTS.map((prompt, idx) => (
@@ -295,6 +373,29 @@ export default function AiTutorPage() {
                 );
               })}
 
+              {/* Display RAG Sources if available from last turn */}
+              {recentSources.length > 0 && !isLoading && (
+                <div className="pl-11">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-xs space-y-1.5">
+                    <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Database className="w-3.5 h-3.5 text-indigo-500" />
+                      Grounded Citations ({recentSources.length} relevant chunks used)
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {recentSources.map((source, i) => (
+                        <span
+                          key={source._id || i}
+                          className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/40 px-2 py-0.5 rounded-lg text-[11px] font-mono"
+                          title={source.snippet}
+                        >
+                          Chunk #{source.chunkIndex + 1} ({(source.score * 100).toFixed(0)}%)
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {isLoading && (
                 <div className="flex gap-3.5 items-start">
                   <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0 mt-1 shadow-sm">
@@ -302,7 +403,11 @@ export default function AiTutorPage() {
                   </div>
                   <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-none p-4 text-slate-500 dark:text-slate-400 flex items-center gap-2 text-sm">
                     <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-                    <span>StudyMate AI is analyzing and generating response...</span>
+                    <span>
+                      {selectedDocId
+                        ? "Searching document chunks with vector similarity & generating grounded response..."
+                        : "StudyMate AI is analyzing and generating response..."}
+                    </span>
                   </div>
                 </div>
               )}
@@ -331,7 +436,11 @@ export default function AiTutorPage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask anything in ${MODES.find(m => m.id === selectedMode)?.label} mode...`}
+              placeholder={
+                activeDoc
+                  ? `Ask anything from "${activeDoc.fileName}"...`
+                  : `Ask anything in ${MODES.find((m) => m.id === selectedMode)?.label} mode...`
+              }
               disabled={isLoading}
               className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
             />
@@ -346,5 +455,13 @@ export default function AiTutorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AiTutorPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading AI Tutor...</div>}>
+      <AiTutorContent />
+    </Suspense>
   );
 }
